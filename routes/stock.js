@@ -10,19 +10,20 @@ const database = firebase_admin2.database();
 
 // 取得所有公司資料
 router.get("/getStocks", function (req, res) {
-  let obj = {};
-  const ary = [];
   database.ref("stocks").once("value", function (snapshot) {
-    Object.keys(snapshot.val()).forEach((element) => {
-      obj.code = snapshot.val()[element].code;
-      obj.name = snapshot.val()[element].name;
-      obj.stockCode = snapshot.val()[element].stockCode;
-      ary.push(obj);
-      obj = {};
-    });
+    // Object.keys(snapshot.val()).forEach((element) => {
+    //   obj.code = snapshot.val()[element].code;
+    //   obj.name = snapshot.val()[element].name;
+    //   obj.stockCode = snapshot.val()[element].stockCode;
+    //   ary.push(obj);
+    //   obj = {};
+    // });
+    const dataArray = Object.entries(snapshot.val()).map(([code, { name, stockCode }]) => ({ code, name, stockCode }));
+
     res.send(ary);
   });
 });
+
 
 // 新增自己的庫藏股
 router.post("/addStock", function (req, res) {
@@ -74,7 +75,7 @@ router.post("/getStoreStock", function (req, res) {
         axios
           .get(apiURL)
           .then((response) => {
-            console.log('response',response.data.msgArray);
+            console.log("response", response.data.msgArray);
             response.data.msgArray.forEach((item) => {
               for (let key in obj) {
                 if (obj[key].code === item.c) {
@@ -132,7 +133,7 @@ router.post("/getStoreStock", function (req, res) {
               tempAry.push(item.price * 1 * item.counts);
               analysis.push(tempAry);
             });
-            console.log('resultArray',resultArray);
+            console.log("resultArray", resultArray);
             res.send({ resultArray, analysis, total, ROI });
           })
           .catch((err) => {
@@ -163,7 +164,6 @@ router.post("/updateStoreStockPrice", function (req, res) {
       axios
         .get(apiURL)
         .then((response) => {
-         
           response.data.msgArray.forEach((item) => {
             for (let key in obj) {
               if (obj[key].code === item.c) {
@@ -195,7 +195,7 @@ router.post("/updateStoreStockPrice", function (req, res) {
             ).toFixed(2);
           });
           const resultArray = Object.values(result);
-          console.log('resultArray',resultArray);
+          console.log("resultArray", resultArray);
           res.send(resultArray);
         })
         .catch((error) => {
