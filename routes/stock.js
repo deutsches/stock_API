@@ -20,7 +20,7 @@ router.get("/getStocks", function (req, res) {
     // });
     const dataArray = Object.entries(snapshot.val()).map(([code, { name, stockCode }]) => ({ code, name, stockCode }));
 
-    res.send(ary);
+    res.send(dataArray);
   });
 });
 
