@@ -30,24 +30,20 @@ router.post("/addStock", function (req, res) {
 // 顯示自己的關注股
 router.post("/getFocusStock", function (req, res) {
   const token = req.header("Authorization");
-  // console.log('getFocusStock');
-  // database
-  //   .ref("focus")
-  //   .child(token)
-  //   .once("value", function (snapshot) {
-
-  //     if (snapshot.val() !== null) {
-  //       // const arr = Array.from(Object.keys(snapshot.val()), (key) => ({
-  //       //   code: key,
-  //       //   ...snapshot.val()[key],
-  //       // }));
-  //       // console.log('res',arr);
-  //       console.log('update',updatePrice(token));
-  //       res.send(updatePrice(token));
-  //     } else {
-  //       res.send([]);
-  //     }
-  //   });
+  let index = {
+    'tse':{
+      name: '',
+      deal: 0,
+      updown: 0,
+      change: '',
+    },
+    'otc':{
+      name: '',
+      deal: 0,
+      updown: 0,
+      change: '',
+    }
+  };
     database
       .ref("focus")
       .child(token)
@@ -56,37 +52,52 @@ router.post("/getFocusStock", function (req, res) {
         const stockCodes = Array.from(
           new Set(Object.values(snapshot.val()).map((item) => item.stockCode))
         );
+        
         let obj = snapshot.val();
         let para = "";
         stockCodes.forEach((item) => {
           para += item + "|";
         });
-        const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${para}`;
+        const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=tse_t00.tw|otc_o00.tw|${para}`;
         axios
           .get(apiURL)
           .then((response) => {
             response.data.msgArray.forEach((item) => {
               for (let key in obj) {
+                console.log(obj[key].code+','+item.c);
                 if (obj[key].code === item.c) {
                   if (item.z === "-") {
-                    obj[key].updown = 0;
-                    obj[key].dealPrice = item.y * 1;
-                  } else {
-                    obj[key].updown = ((item.z - item.y) * 1).toFixed(2);
-                    obj[key].dealPrice = (item.z * 1).toFixed(2);
-                  }
+                    let ary = item.b.split('_');
+                    item.z = ary[0] * 1;
+                  } 
+                  obj[key].updown = ((item.z - item.y) * 1).toFixed(2);
+                  obj[key].dealPrice = (item.z * 1).toFixed(2);
+                  
                   if (obj[key].updown === 0) {
                     obj[key].change = 0 + "%";
                   } else {
                     obj[key].change =
                       ((obj[key].updown / item.y) * 100).toFixed(2) + "%";
                   }
+                } else {
+                  // 加權指數和櫃買指數
+                  if(item.c === 't00') {
+                    index.tse.name = item.n;
+                    index.tse.deal = item.z*1;
+                    index.tse.updown = (item.z*1 - item.y*1).toFixed(2);
+                    index.tse.change = (index.tse.updown / (item.y*1) * 100).toFixed(2) + '%';
+                  } else if (item.c === 'o00') {
+                    index.otc.name = item.n;
+                    index.otc.deal = item.z*1;
+                    index.otc.updown = (item.z*1 - item.y*1).toFixed(2);
+                    index.otc.change = (index.otc.updown / (item.y*1)*100).toFixed(2) + '%';
+                  }
                 }
               }
             });
             database.ref("focus").child(token).update(obj);
             console.log(Object.values(obj));
-            res.send(Object.values(obj));
+            res.send({'resultArray':Object.values(obj),index});
           })
           .catch((error) => {
             console.log(error);
@@ -94,7 +105,32 @@ router.post("/getFocusStock", function (req, res) {
             // res.status(500).send("Internal Server Error");
           });
         } else {
-          res.send([]);
+          const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=tse_t00.tw|otc_o00.tw|`;
+          axios
+          .get(apiURL)
+          .then((response) => {
+            response.data.msgArray.forEach((item) => {
+              
+            // 加權指數和櫃買指數
+              if (item.c === "t00") {
+                index.tse.name = item.n;
+                index.tse.deal = item.z * 1;
+                index.tse.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                index.tse.change =
+                  ((index.tse.updown / (item.y * 1)) * 100).toFixed(2) + "%";
+              } else {
+                index.otc.name = item.n;
+                index.otc.deal = item.z * 1;
+                index.otc.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                index.otc.change =
+                  ((index.otc.updown / (item.y * 1)) * 100).toFixed(2) + "%";
+              }
+            });
+            res.send({ resultArray: [], index });
+          })
+          .catch((err) => {
+            console.log(err);
+          });
         }
       });
 });

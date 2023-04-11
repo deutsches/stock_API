@@ -18,12 +18,13 @@ router.get("/getStocks", function (req, res) {
     //   ary.push(obj);
     //   obj = {};
     // });
-    const dataArray = Object.entries(snapshot.val()).map(([code, { name, stockCode }]) => ({ code, name, stockCode }));
+    const dataArray = Object.entries(snapshot.val()).map(
+      ([code, { name, stockCode }]) => ({ code, name, stockCode })
+    );
 
     res.send(dataArray);
   });
 });
-
 
 // 新增自己的庫藏股
 router.post("/addStock", function (req, res) {
@@ -62,6 +63,20 @@ router.post("/getStoreStock", function (req, res) {
     .ref("store")
     .child(token)
     .once("value", function (snapshot) {
+      let index = {
+        tse: {
+          name: "",
+          deal: 0,
+          updown: 0,
+          change: "",
+        },
+        otc: {
+          name: "",
+          deal: 0,
+          updown: 0,
+          change: "",
+        },
+      };
       if (snapshot.val() !== null) {
         const stockCodes = Array.from(
           new Set(Object.values(snapshot.val()).map((item) => item.stockCode))
@@ -71,7 +86,7 @@ router.post("/getStoreStock", function (req, res) {
         stockCodes.forEach((item) => {
           para += item + "|";
         });
-        const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=${para}`;
+        const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=tse_t00.tw|otc_o00.tw|${para}`;
         axios
           .get(apiURL)
           .then((response) => {
@@ -80,11 +95,13 @@ router.post("/getStoreStock", function (req, res) {
               for (let key in obj) {
                 if (obj[key].code === item.c) {
                   if (item.z === "-") {
-                    item.z = item.y;
+                    let ary = item.b.split('_');
+                    item.z = ary[0] * 1;
                   }
                   obj[key].dealPrice = (item.z * 1).toFixed(2);
                   obj[key].profit =
-                    (item.z * 1 - obj[key].price * 1) * obj[key].counts;
+                    item.z * 1 * obj[key].counts -
+                    obj[key].price * 1 * obj[key].counts;
                   obj[key].change =
                     obj[key].profit === 0
                       ? 0
@@ -93,6 +110,23 @@ router.post("/getStoreStock", function (req, res) {
                             (obj[key].counts * obj[key].price)) *
                           100
                         ).toFixed(2) + "%";
+                } else {
+                  // 加權指數和櫃買指數
+                  if (item.c === "t00") {
+                    index.tse.name = item.n;
+                    index.tse.deal = item.z * 1;
+                    index.tse.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                    index.tse.change =
+                      ((index.tse.updown / (item.y * 1)) * 100).toFixed(2) +
+                      "%";
+                  } else if (item.c === 'o00') {
+                    index.otc.name = item.n;
+                    index.otc.deal = item.z * 1;
+                    index.otc.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                    index.otc.change =
+                      ((index.otc.updown / (item.y * 1)) * 100).toFixed(2) +
+                      "%";
+                  }
                 }
               }
             });
@@ -123,6 +157,7 @@ router.post("/getStoreStock", function (req, res) {
                 result[code].price / result[code].counts
               ).toFixed(2);
             });
+
             total = total.toFixed(0);
             ROI = ((total / ROI) * 100).toFixed(2) + "%";
             const resultArray = Object.values(result);
@@ -134,13 +169,40 @@ router.post("/getStoreStock", function (req, res) {
               analysis.push(tempAry);
             });
             console.log("resultArray", resultArray);
-            res.send({ resultArray, analysis, total, ROI });
+            res.send({ resultArray, analysis, total, ROI, index });
           })
           .catch((err) => {
             console.log(err);
           });
       } else {
-        res.send([]);
+        const apiURL = `https://mis.twse.com.tw/stock/api/getStockInfo.jsp?json=1&delay=0&ex_ch=tse_t00.tw|otc_o00.tw|`;
+        axios
+          .get(apiURL)
+          .then((response) => {
+            console.log(response.data.msgArray);
+            response.data.msgArray.forEach((item) => {
+              
+            // 加權指數和櫃買指數
+              if (item.c === "t00") {
+                index.tse.name = item.n;
+                index.tse.deal = item.z * 1;
+                index.tse.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                index.tse.change =
+                  ((index.tse.updown / (item.y * 1)) * 100).toFixed(2) + "%";
+              } else {
+                index.otc.name = item.n;
+                index.otc.deal = item.z * 1;
+                index.otc.updown = (item.z * 1 - item.y * 1).toFixed(2);
+                index.otc.change =
+                  ((index.otc.updown / (item.y * 1)) * 100).toFixed(2) + "%";
+              }
+            });
+            res.send({ resultArray: [], index });
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+        
       }
     });
 });

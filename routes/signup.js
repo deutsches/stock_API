@@ -19,11 +19,11 @@ router.post('/', function (req, res) {
         res.send('success');
     })
     .catch(function(error){
-        console.log(error.errorInfo);
-        if(error.errorInfo.message === 'auth/invalid-password') {
+        console.log(error.code);
+        if(error.errorInfo.code === 'auth/invalid-password') {
             res.send('密碼至少要6個字!');
         }
-        if(error.errorInfo.message === 'auth/invalid-email') {
+        if(error.errorInfo.code === 'auth/invalid-email') {
             res.send('信箱格式錯誤!');
         }
         if(error.errorInfo.code === 'auth/email-already-exists') {
