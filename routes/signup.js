@@ -9,7 +9,6 @@ router.use(bodyParser.urlencoded({ extended: false }));
 
 router.post('/', function (req, res) {
     const {email, password } = req.body;
-    console.log(req.body);
     auth.createUser({
         email,
         password,
@@ -19,7 +18,6 @@ router.post('/', function (req, res) {
         res.send('success');
     })
     .catch(function(error){
-        console.log(error.code);
         if(error.errorInfo.code === 'auth/invalid-password') {
             res.send('密碼至少要6個字!');
         }

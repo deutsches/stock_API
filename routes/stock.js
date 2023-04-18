@@ -1,12 +1,12 @@
 var express = require("express");
 var router = express.Router();
 const firebase_admin = require("../connection/firebase_admin_connect");
-const firebase_admin2 = require("firebase-admin");
-var auth = firebase_admin2.auth();
+const admin = require("firebase-admin");
+var auth = admin.auth();
 var bodyParser = require("body-parser");
 router.use(bodyParser.urlencoded({ extended: false }));
 const axios = require("axios");
-const database = firebase_admin2.database();
+const database = admin.database();
 
 // 取得所有公司資料
 router.get("/getStocks", function (req, res) {
@@ -137,7 +137,7 @@ router.post("/getStoreStock", function (req, res) {
                 acc[curr.code] = { ...curr, price: curr.price * curr.counts };
               } else {
                 acc[curr.code].profit += curr.profit;
-                acc[curr.code].counts += curr.counts;
+                acc[curr.code].counts = acc[curr.code].counts*1 + curr.counts*1;
                 acc[curr.code].price += curr.price * curr.counts;
               }
               return acc;

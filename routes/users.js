@@ -1,12 +1,11 @@
 var express = require("express");
 var router = express.Router();
 const firebase_admin = require("../connection/firebase_admin_connect");
-const firebase_admin2 = require("firebase-admin");
-var auth = firebase_admin2.auth();
+const admin = require("firebase-admin");
+var auth = admin.auth();
 var bodyParser = require("body-parser");
 router.use(bodyParser.urlencoded({ extended: false }));
-// console.log('1',firebase_admin);
-// console.log('2',firebase_admin2);
+
 /* GET users listing. */
 router.post("/check", function (req, res) {
   const uid = req.header("Authorization");

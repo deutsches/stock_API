@@ -1,12 +1,12 @@
 var express = require("express");
 var router = express.Router();
 const firebase_admin = require("../connection/firebase_admin_connect");
-const firebase_admin2 = require("firebase-admin");
-var auth = firebase_admin2.auth();
+const admin = require("firebase-admin");
+var auth = admin.auth();
 var bodyParser = require("body-parser");
 router.use(bodyParser.urlencoded({ extended: false }));
 const axios = require('axios');
-const database = firebase_admin2.database().ref("stocks");
+const database = admin.database().ref("stocks");
 
 // 儲存上市公司
 router.get("/savetse", function (req, res) {
