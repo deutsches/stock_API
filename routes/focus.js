@@ -270,8 +270,8 @@ function sendMail(token,obj) {
   
   const mailContent = {
     from: '"股市關注網"<germanyisgood@gmail.com>',
-    to: 'germanyisgood@gmail.com',
-    // to: user.email,
+    // to: 'germanyisgood@gmail.com',
+    to: user.email,
     subject: `${obj.name}價格警示`,
     text:`${obj.name}已經到了您設定的警示價格${obj.notice.dealPrice}`,
   }
