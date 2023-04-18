@@ -262,30 +262,29 @@ function sendMail(token,obj) {
   .then((userRecord) => {
     // 找到使用者，進行後續處理
     user = userRecord;
-    console.log(user.email);
+    const mailContent = {
+      from: '"股市關注網"<germanyisgood@gmail.com>',
+      // to: 'germanyisgood@gmail.com',
+      to: user.email,
+      subject: `${obj.name}價格警示`,
+      text:`${obj.name}已經到了您設定的警示價格${obj.notice.dealPrice}`,
+    }
+    const notice = {
+      dealPrice: '',
+      send: true,
+    }
+    transporter.sendMail(mailContent,function(error, info) {
+      console.log('通知成功!');
+      database
+      .ref("focus")
+      .child(token).child(obj.code).child('notice')
+      .update(notice);
+    })
   })
   .catch((error) => {
     console.log('Error fetching user data:', error);
   });
   
-  const mailContent = {
-    from: '"股市關注網"<germanyisgood@gmail.com>',
-    // to: 'germanyisgood@gmail.com',
-    to: user.email,
-    subject: `${obj.name}價格警示`,
-    text:`${obj.name}已經到了您設定的警示價格${obj.notice.dealPrice}`,
-  }
-  const notice = {
-    dealPrice: '',
-    send: true,
-  }
-  transporter.sendMail(mailContent,function(error, info) {
-    console.log('通知成功!');
-    database
-    .ref("focus")
-    .child(token).child(obj.code).child('notice')
-    .update(notice);
-  })
 }
 
 module.exports = router;
