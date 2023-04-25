@@ -94,10 +94,13 @@ router.post("/getStoreStock", function (req, res) {
             response.data.msgArray.forEach((item) => {
               for (let key in obj) {
                 if (obj[key].code === item.c) {
-                  if (item.z === "-") {
+                  // 非交易期間有可能沒有b買價
+                  if (!item.hasOwnProperty('b')) {
+                    item.z = item.y;
+                  } else if (item.z === "-") {
                     let ary = item.b.split('_');
                     item.z = ary[0] * 1;
-                  }
+                  } 
                   obj[key].dealPrice = (item.z * 1).toFixed(2);
                   obj[key].profit =
                     item.z * 1 * obj[key].counts -

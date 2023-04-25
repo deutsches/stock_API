@@ -87,7 +87,9 @@ router.post("/getFocusStock", function (req, res) {
             response.data.msgArray.forEach((item) => {
               for (let key in obj) {
                 if (obj[key].code === item.c) {
-                  if (item.z === "-") {
+                  if (!item.hasOwnProperty('b')) {
+                    item.z = item.y;
+                  } else if (item.z === "-") {
                     let ary = item.b.split('_');
                     item.z = ary[0] * 1;
                   } 
@@ -274,6 +276,7 @@ function sendMail(token,obj) {
       send: true,
     }
     transporter.sendMail(mailContent,function(error, info) {
+      console.log('user!',user.email);
       console.log('通知成功!');
       database
       .ref("focus")
